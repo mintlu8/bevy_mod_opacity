@@ -1,0 +1,34 @@
+[workspace]
+members = ["derive"]
+
+[package]
+name = "bevy_mod_opacity"
+version = "0.1.0"
+edition = "2021"
+
+authors = ["Mincong Lu <mintlux667@gmail.com>"]
+license = "MIT OR Apache-2.0"
+
+readme = "README.md"
+repository = "https://github.com/mintlu8/bevy_mod_opacity"
+description = """
+Hierarchical opacity for bevy.
+"""
+keywords = ["bevy", "opacity", "fading"]
+
+[features]
+default = ["derive"]
+derive = ["bevy_mod_opacity_derive"]
+
+[dependencies]
+bevy = { version = "0.14.2", default-features = false, features = [
+    "bevy_render", 
+    "bevy_pbr",
+    "bevy_ui",
+    "bevy_sprite",
+]}
+bevy_mod_opacity_derive = { version = "0.1", optional = true, path = "./derive" }
+
+
+[dev-dependencies]
+bevy = "0.14.2"
