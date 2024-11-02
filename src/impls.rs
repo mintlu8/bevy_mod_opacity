@@ -4,7 +4,7 @@ use bevy::{
     pbr::StandardMaterial,
     prelude::Component,
     sprite::{ColorMaterial, Sprite},
-    text::Text,
+    text::TextColor,
     ui::{BackgroundColor, BorderColor, UiImage},
 };
 
@@ -14,7 +14,7 @@ impl OpacityComponent for Sprite {
     type Cx = ();
 
     fn apply_opacity(&mut self, _: &mut (), opacity: f32) {
-        self.color.set_alpha(opacity);
+        Alpha::set_alpha(&mut self.color, opacity);
     }
 }
 
@@ -22,17 +22,15 @@ impl OpacityComponent for UiImage {
     type Cx = ();
 
     fn apply_opacity(&mut self, _: &mut (), opacity: f32) {
-        self.color.set_alpha(opacity);
+        Alpha::set_alpha(&mut self.color, opacity);
     }
 }
 
-impl OpacityComponent for Text {
+impl OpacityComponent for TextColor {
     type Cx = ();
 
     fn apply_opacity(&mut self, _: &mut (), opacity: f32) {
-        for section in &mut self.sections {
-            section.style.color.set_alpha(opacity);
-        }
+        Alpha::set_alpha(&mut self.0, opacity);
     }
 }
 
@@ -66,14 +64,14 @@ impl OpacityQuery for UiColorQuery {
         match this.ui_color {
             UiOpacity::None => (),
             UiOpacity::Border => {
-                this.border.0.set_alpha(opacity);
+                Alpha::set_alpha(&mut this.border.0, opacity);
             }
             UiOpacity::Background => {
-                this.background.0.set_alpha(opacity);
+                Alpha::set_alpha(&mut this.background.0, opacity);
             }
             UiOpacity::Both => {
-                this.border.0.set_alpha(opacity);
-                this.background.0.set_alpha(opacity);
+                Alpha::set_alpha(&mut this.border.0, opacity);
+                Alpha::set_alpha(&mut this.background.0, opacity);
             }
         }
     }
@@ -81,12 +79,12 @@ impl OpacityQuery for UiColorQuery {
 
 impl OpacityAsset for ColorMaterial {
     fn apply_opacity(&mut self, opacity: f32) {
-        self.color.set_alpha(opacity)
+        Alpha::set_alpha(&mut self.color, opacity)
     }
 }
 
 impl OpacityAsset for StandardMaterial {
     fn apply_opacity(&mut self, opacity: f32) {
-        self.base_color.set_alpha(opacity)
+        Alpha::set_alpha(&mut self.base_color, opacity);
     }
 }

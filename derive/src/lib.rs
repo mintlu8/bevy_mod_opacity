@@ -5,7 +5,7 @@ use quote::quote;
 use syn::{parse_macro_input, spanned::Spanned, Data, DeriveInput, Type};
 
 /// Macro to mark something affected by opacity.
-/// 
+///
 /// # Field Attributes
 ///
 /// * `#[opacity]`

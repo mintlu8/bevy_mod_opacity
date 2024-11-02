@@ -64,9 +64,11 @@ fn test() {
     });
     world.insert_resource(assets);
 
-    world.run_system_once(move |mut res: ResMut<Assets<MyColorMaterial>>| {
-        id.apply_opacity(&mut res, 0.5);
-    });
+    world
+        .run_system_once(move |mut res: ResMut<Assets<MyColorMaterial>>| {
+            id.apply_opacity(&mut res, 0.5);
+        })
+        .unwrap();
 
     assert_eq!(
         world
