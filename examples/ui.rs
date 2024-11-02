@@ -5,8 +5,8 @@ use bevy::{
     math::Vec3,
     pbr::AmbientLight,
     prelude::{
-        BuildChildren, Camera, Camera2dBundle, Camera3dBundle, Commands, Component,
-        ImageBundle, NodeBundle, Res, TextBundle, Transform,
+        BuildChildren, Camera, Camera2dBundle, Camera3dBundle, Commands, Component, ImageBundle,
+        NodeBundle, Res, TextBundle, Transform,
     },
     scene::SceneBundle,
     text::{Text, TextStyle},
@@ -163,9 +163,5 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
             transform: Transform::from_translation(Vec3::new(-1., 0., 1.)),
             ..Default::default()
         })
-        .insert((
-            Opacity::INVISIBLE,
-            FadeIn::new(4.),
-            OnDelete,
-        ));
+        .insert((Opacity::INVISIBLE, FadeIn::new(4.), OnDelete));
 }

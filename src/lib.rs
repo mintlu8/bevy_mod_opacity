@@ -40,13 +40,13 @@ use bevy::{
         query::QueryData,
         system::{StaticSystemParam, SystemParam},
     },
-    pbr::{ExtendedMaterial, Material, MaterialExtension, StandardMaterial},
+    pbr::{ExtendedMaterial, Material, MaterialExtension},
     prelude::{
         Children, Component, Entity, IntoSystemConfigs, IntoSystemSetConfigs, Query, Res, ResMut,
         Resource, SystemSet,
     },
-    sprite::{ColorMaterial, Sprite},
-    text::Text,
+    sprite::Sprite,
+    text::TextColor,
     transform::systems::{propagate_transforms, sync_simple_transforms},
     ui::UiImage,
 };
@@ -258,10 +258,10 @@ impl Plugin for OpacityPlugin {
         app.add_systems(PostUpdate, (fade_in, fade_out).in_set(Fading));
         app.add_systems(PostUpdate, calculate_opacity.in_set(Calculate));
         app.add_plugins(OpacityComponentPlugin::<Sprite>::new());
-        app.add_plugins(OpacityComponentPlugin::<Text>::new());
+        app.add_plugins(OpacityComponentPlugin::<TextColor>::new());
         app.add_plugins(OpacityComponentPlugin::<UiImage>::new());
-        app.add_plugins(OpacityComponentPlugin::<Handle<ColorMaterial>>::new());
-        app.add_plugins(OpacityComponentPlugin::<Handle<StandardMaterial>>::new());
+        //app.add_plugins(OpacityComponentPlugin::<Handle<ColorMaterial>>::new());
+        //app.add_plugins(OpacityComponentPlugin::<Handle<StandardMaterial>>::new());
         app.add_plugins(OpacityQueryPlugin::<UiColorQuery>::new());
     }
 }
