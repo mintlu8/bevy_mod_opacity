@@ -4,8 +4,10 @@ use proc_macro_error::{abort, proc_macro_error};
 use quote::quote;
 use syn::{parse_macro_input, spanned::Spanned, Data, DeriveInput, Type};
 
-/// Macro to mark something affected by opacity.
+/// Declare a `Component` or `Asset` as affected by opacity.
 /// 
+/// For more complicated behaviors, implement `OpacityQuery` manually.
+///
 /// # Field Attributes
 ///
 /// * `#[opacity]`
@@ -17,15 +19,15 @@ use syn::{parse_macro_input, spanned::Spanned, Data, DeriveInput, Type};
 ///
 /// * `#[opacity(asset)]`
 ///
-///   Registers `Handle<Self>`.
+///   Register as an asset.
 ///   
 /// *  `#[opacity(extends = StandardMaterial)]`
 ///
-///   Registers `Handle<ExtendedMaterial<Base, Self>>` where `Base` is also `OpacityAsset`.
+///   Registers `ExtendedMaterial<Base, Self>` where `Base` is also `OpacityAsset`.
 ///
 /// *  `#[opacity(masks = StandardMaterial)]`
 ///
-///   Registers `Handle<ExtendedMaterial<Base, Self>>` where the `Base` is not affected by opacity.
+///   Registers `ExtendedMaterial<Base, Self>` where `Base` is not affected by opacity.
 #[proc_macro_error]
 #[proc_macro_derive(Opacity, attributes(opacity))]
 pub fn opacity(tokens: TokenStream) -> TokenStream {
@@ -86,50 +88,64 @@ pub fn opacity(tokens: TokenStream) -> TokenStream {
         }
     }
     let crate0 = quote! {::bevy_mod_opacity};
-    let mut result = quote! {
-        const _: () =  {
-            impl #crate0::OpacityComponent for #name {
-                type Cx = ();
+    if asset || !extends.is_empty() || !masks.is_empty() {
+        let mut result = quote! {};
 
-                fn apply_opacity(&mut self, _: &mut (), opacity: f32) {
-                    #(#crate0::set_alpha(&mut self.#fields, opacity);)*
-                }
-            }
-        };
-    };
-    if asset {
-        result.extend(quote! {
+        if asset {
+            result.extend(quote! {
+                const _: () =  {
+                    impl #crate0::OpacityAsset for #name {
+                        fn apply_opacity(
+                            &mut self,
+                            opacity: f32,
+                        ) {
+                            #(#crate0::set_alpha(&mut self.#fields, opacity);)*
+                        }
+                    }
+                };
+            });
+        }
+
+        for ty in extends {
+            result.extend(quote! {
+                const _: () =  {
+                    impl #crate0::OpacityMaterialExtension<#ty> for #name {
+                        fn apply_opacity(a: &mut #ty, b: &mut Self, opacity: f32) {
+                            #crate0::OpacityAsset::apply_opacity(a, opacity);
+                            #(#crate0::set_alpha(&mut b.#fields, opacity);)*
+                        }
+                    }
+                };
+            });
+        }
+        for ty in masks {
+            result.extend(quote! {
+                const _: () =  {
+                    impl #crate0::OpacityMaterialExtension<#ty> for #name {
+                        fn apply_opacity(a: &mut #ty, b: &mut Self, opacity: f32) {
+                            #(#crate0::set_alpha(&mut b.#fields, opacity);)*
+                        }
+                    }
+                };
+            });
+        }
+        result.into()
+    } else {
+        quote! {
             const _: () =  {
-                impl #crate0::OpacityAsset for #name {
-                    fn apply_opacity(&mut self, opacity: f32) {
-                        #(#crate0::set_alpha(&mut self.#fields, opacity);)*
+                impl #crate0::OpacityQuery for &mut #name {
+                    type Cx = ();
+
+                    fn apply_opacity(
+                        this: &mut <Self as #crate0::WorldQuery>::Item<'_>,
+                        _: &mut (),
+                        opacity: f32,
+                    ) {
+                        #(#crate0::set_alpha(&mut this.#fields, opacity);)*
                     }
                 }
             };
-        });
+        }
+        .into()
     }
-    for ty in extends {
-        result.extend(quote! {
-            const _: () =  {
-                impl #crate0::OpacityMaterialExtension<#ty> for #name {
-                    fn apply_opacity(a: &mut #ty, b: &mut Self, opacity: f32) {
-                        #crate0::OpacityAsset::apply_opacity(a, opacity);
-                        #(#crate0::set_alpha(&mut b.#fields, opacity);)*
-                    }
-                }
-            };
-        });
-    }
-    for ty in masks {
-        result.extend(quote! {
-            const _: () =  {
-                impl #crate0::OpacityMaterialExtension<#ty> for #name {
-                    fn apply_opacity(a: &mut #ty, b: &mut Self, opacity: f32) {
-                        #(#crate0::set_alpha(&mut b.#fields, opacity);)*
-                    }
-                }
-            };
-        });
-    }
-    result.into()
 }

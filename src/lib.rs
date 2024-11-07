@@ -20,10 +20,10 @@
 //! These components adds a quick way to add and remove items from your scenes smoothly
 //! as a complement to `insert` and an alternative to `remove`.
 //!
-//! # Pitfalls
+//! # My item is no fading
 //!
-//! Spawned scenes might share material from the same handle,
-//! cloning materials is required for this crate to function properly.
+//! For 3d materials, we only affect handles with strong count `1`,
+//! meaning we won't try to modify materials with strong duplicates.
 
 mod alpha;
 mod fading;
@@ -32,6 +32,10 @@ mod impls;
 pub use alpha::set_alpha;
 #[doc(hidden)]
 pub use bevy::asset::{Assets, Handle};
+#[doc(hidden)]
+pub use bevy::ecs::query::WorldQuery;
+
+use bevy::sprite::Material2d;
 use bevy::{
     app::{App, Plugin, PostUpdate},
     asset::Asset,
@@ -40,13 +44,13 @@ use bevy::{
         query::QueryData,
         system::{StaticSystemParam, SystemParam},
     },
-    pbr::{ExtendedMaterial, Material, MaterialExtension, StandardMaterial},
+    pbr::{ExtendedMaterial, Material, MaterialExtension, MeshMaterial3d, StandardMaterial},
     prelude::{
         Children, Component, Entity, IntoSystemConfigs, IntoSystemSetConfigs, Query, Res, ResMut,
         Resource, SystemSet,
     },
-    sprite::{ColorMaterial, Sprite},
-    text::Text,
+    sprite::{ColorMaterial, MeshMaterial2d, Sprite},
+    text::TextColor,
     transform::systems::{propagate_transforms, sync_simple_transforms},
     ui::UiImage,
 };
@@ -92,15 +96,8 @@ pub enum OpacitySet {
     Apply,
 }
 
-/// A [`Component`] with an opacity value.
-pub trait OpacityComponent {
-    type Cx: SystemParam;
-
-    fn apply_opacity(&mut self, cx: &mut <Self::Cx as SystemParam>::Item<'_, '_>, opacity: f32);
-}
-
 /// A [`QueryData`] with an opacity value.
-pub trait OpacityQuery: QueryData + Send + Sync + 'static {
+pub trait OpacityQuery: QueryData + Send + Sync {
     type Cx: SystemParam;
 
     fn apply_opacity(
@@ -113,19 +110,6 @@ pub trait OpacityQuery: QueryData + Send + Sync + 'static {
 /// An [`Asset`] with an opacity value.
 pub trait OpacityAsset: Asset {
     fn apply_opacity(&mut self, opacity: f32);
-}
-
-impl<T> OpacityComponent for Handle<T>
-where
-    T: OpacityAsset,
-{
-    type Cx = ResMut<'static, Assets<T>>;
-
-    fn apply_opacity(&mut self, cx: &mut <Self::Cx as SystemParam>::Item<'_, '_>, opacity: f32) {
-        if let Some(asset) = cx.get_mut(self.id()) {
-            OpacityAsset::apply_opacity(asset, opacity);
-        }
-    }
 }
 
 /// A [`MaterialExtension`] with an opacity value.
@@ -166,57 +150,11 @@ fn calculate_opacity(
     }
 }
 
-/// Add support for writing opacity to a [`Component`].
-#[derive(Debug)]
-pub struct OpacityComponentPlugin<C: OpacityComponent>(PhantomData<C>);
-
-impl<C: OpacityComponent> OpacityComponentPlugin<C> {
-    pub const fn new() -> Self {
-        Self(PhantomData)
-    }
-}
-
-impl<C: OpacityComponent> Default for OpacityComponentPlugin<C> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<C: OpacityComponent + Component> Plugin for OpacityComponentPlugin<C> {
-    fn build(&self, app: &mut App) {
-        app.add_systems(PostUpdate, apply_opacity::<C>.in_set(OpacitySet::Apply));
-    }
-}
-
-fn apply_opacity<C: OpacityComponent + Component>(
-    map: Res<OpacityMap>,
-    cx: StaticSystemParam<C::Cx>,
-    mut query: Query<(Entity, &mut C)>,
-) {
-    let mut cx = cx.into_inner();
-    for (entity, mut component) in &mut query {
-        if let Some(opacity) = map.0.get(&entity) {
-            component.apply_opacity(&mut cx, *opacity)
-        }
-    }
-}
 /// Add support for writing opacity to a [`QueryData`].
 #[derive(Debug)]
-pub struct OpacityQueryPlugin<C: OpacityQuery>(PhantomData<C>);
+pub(crate) struct OpacityQueryPlugin<C: OpacityQuery>(PhantomData<C>);
 
-impl<C: OpacityQuery> OpacityQueryPlugin<C> {
-    pub const fn new() -> Self {
-        Self(PhantomData)
-    }
-}
-
-impl<C: OpacityQuery> Default for OpacityQueryPlugin<C> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<C: OpacityQuery> Plugin for OpacityQueryPlugin<C> {
+impl<C: OpacityQuery + 'static> Plugin for OpacityQueryPlugin<C> {
     fn build(&self, app: &mut App) {
         app.add_systems(
             PostUpdate,
@@ -241,6 +179,40 @@ fn apply_opacity_query<Q: OpacityQuery>(
 /// Plugin for [`bevy_mod_opacity`](crate) that adds support for basic bevy types.
 pub struct OpacityPlugin;
 
+pub trait OpacityExtension {
+    fn register_opacity<Q: OpacityQuery + 'static>(&mut self) -> &mut Self;
+    fn register_opacity_component<C: Component>(&mut self) -> &mut Self
+    where
+        &'static mut C: OpacityQuery;
+    fn register_opacity_material2d<M: Material2d + OpacityAsset>(&mut self) -> &mut Self;
+    fn register_opacity_material3d<M: Material + OpacityAsset>(&mut self) -> &mut Self;
+}
+
+impl OpacityExtension for App {
+    fn register_opacity<Q: OpacityQuery + 'static>(&mut self) -> &mut Self {
+        self.add_plugins(OpacityQueryPlugin::<Q>(PhantomData));
+        self
+    }
+
+    fn register_opacity_component<C: Component>(&mut self) -> &mut Self
+    where
+        &'static mut C: OpacityQuery,
+    {
+        self.add_plugins(OpacityQueryPlugin::<&mut C>(PhantomData));
+        self
+    }
+
+    fn register_opacity_material2d<M: Material2d + OpacityAsset>(&mut self) -> &mut Self {
+        self.add_plugins(OpacityQueryPlugin::<&MeshMaterial2d<M>>(PhantomData));
+        self
+    }
+
+    fn register_opacity_material3d<M: Material + OpacityAsset>(&mut self) -> &mut Self {
+        self.add_plugins(OpacityQueryPlugin::<&MeshMaterial3d<M>>(PhantomData));
+        self
+    }
+}
+
 impl Plugin for OpacityPlugin {
     fn build(&self, app: &mut App) {
         use bevy::render::view::VisibilitySystems::*;
@@ -257,11 +229,11 @@ impl Plugin for OpacityPlugin {
         );
         app.add_systems(PostUpdate, (fade_in, fade_out).in_set(Fading));
         app.add_systems(PostUpdate, calculate_opacity.in_set(Calculate));
-        app.add_plugins(OpacityComponentPlugin::<Sprite>::new());
-        app.add_plugins(OpacityComponentPlugin::<Text>::new());
-        app.add_plugins(OpacityComponentPlugin::<UiImage>::new());
-        app.add_plugins(OpacityComponentPlugin::<Handle<ColorMaterial>>::new());
-        app.add_plugins(OpacityComponentPlugin::<Handle<StandardMaterial>>::new());
-        app.add_plugins(OpacityQueryPlugin::<UiColorQuery>::new());
+        app.register_opacity_component::<Sprite>();
+        app.register_opacity_component::<TextColor>();
+        app.register_opacity_component::<UiImage>();
+        app.register_opacity_material2d::<ColorMaterial>();
+        app.register_opacity_material3d::<StandardMaterial>();
+        app.register_opacity::<UiColorQuery>();
     }
 }

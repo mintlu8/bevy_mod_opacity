@@ -1,38 +1,37 @@
 use bevy::{
+    asset::Assets,
     color::Alpha,
-    ecs::query::QueryData,
-    pbr::StandardMaterial,
-    prelude::Component,
-    sprite::{ColorMaterial, Sprite},
-    text::Text,
+    ecs::{query::QueryData, system::SystemParam},
+    pbr::{Material, MeshMaterial3d, StandardMaterial},
+    prelude::{Component, ResMut},
+    sprite::{ColorMaterial, Material2d, MeshMaterial2d, Sprite},
+    text::TextColor,
     ui::{BackgroundColor, BorderColor, UiImage},
 };
 
-use crate::{OpacityAsset, OpacityComponent, OpacityQuery};
+use crate::{OpacityAsset, OpacityQuery};
 
-impl OpacityComponent for Sprite {
+impl OpacityQuery for &mut Sprite {
     type Cx = ();
 
-    fn apply_opacity(&mut self, _: &mut (), opacity: f32) {
-        self.color.set_alpha(opacity);
+    fn apply_opacity(this: &mut Self::Item<'_>, _: &mut (), opacity: f32) {
+        this.color.set_alpha(opacity);
     }
 }
 
-impl OpacityComponent for UiImage {
+impl OpacityQuery for &mut UiImage {
     type Cx = ();
 
-    fn apply_opacity(&mut self, _: &mut (), opacity: f32) {
-        self.color.set_alpha(opacity);
+    fn apply_opacity(this: &mut Self::Item<'_>, _: &mut (), opacity: f32) {
+        this.color.set_alpha(opacity);
     }
 }
 
-impl OpacityComponent for Text {
+impl OpacityQuery for &mut TextColor {
     type Cx = ();
 
-    fn apply_opacity(&mut self, _: &mut (), opacity: f32) {
-        for section in &mut self.sections {
-            section.style.color.set_alpha(opacity);
-        }
+    fn apply_opacity(this: &mut Self::Item<'_>, _: &mut (), opacity: f32) {
+        this.set_alpha(opacity);
     }
 }
 
@@ -88,5 +87,39 @@ impl OpacityAsset for ColorMaterial {
 impl OpacityAsset for StandardMaterial {
     fn apply_opacity(&mut self, opacity: f32) {
         self.base_color.set_alpha(opacity)
+    }
+}
+
+impl<T> OpacityQuery for &MeshMaterial2d<T>
+where
+    T: OpacityAsset + Material2d,
+{
+    type Cx = ResMut<'static, Assets<T>>;
+
+    fn apply_opacity(
+        this: &mut Self::Item<'_>,
+        cx: &mut <Self::Cx as SystemParam>::Item<'_, '_>,
+        opacity: f32,
+    ) {
+        if let Some(mat) = cx.get_mut(this.id()) {
+            mat.apply_opacity(opacity);
+        }
+    }
+}
+
+impl<T> OpacityQuery for &MeshMaterial3d<T>
+where
+    T: OpacityAsset + Material,
+{
+    type Cx = ResMut<'static, Assets<T>>;
+
+    fn apply_opacity(
+        this: &mut Self::Item<'_>,
+        cx: &mut <Self::Cx as SystemParam>::Item<'_, '_>,
+        opacity: f32,
+    ) {
+        if let Some(mat) = cx.get_mut(this.id()) {
+            mat.apply_opacity(opacity);
+        }
     }
 }

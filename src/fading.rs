@@ -1,10 +1,7 @@
 use bevy::{
     asset::Asset,
     pbr::{ExtendedMaterial, Material, MaterialExtension, StandardMaterial},
-    prelude::{
-        AlphaMode, Commands, Component, DespawnRecursiveExt, Entity,
-        Query, Res,
-    },
+    prelude::{AlphaMode, Commands, Component, DespawnRecursiveExt, Entity, Query, Res},
     time::{Time, Virtual},
 };
 
@@ -15,6 +12,7 @@ use crate::Opacity;
 /// This component is removed afterwards and opacity is
 /// guaranteed to be equal to `1.0` after this is removed.
 #[derive(Debug, Clone, Copy, Component)]
+#[require(Opacity(||Opacity::INVISIBLE))]
 pub struct FadeIn {
     pub(crate) current: f32,
     pub(crate) time: f32,
@@ -25,6 +23,7 @@ pub struct FadeIn {
 ///
 /// This entity and all its children will be removed afterwards.
 #[derive(Debug, Clone, Copy, Component)]
+#[require(Opacity(||Opacity::FULL))]
 pub struct FadeOut {
     pub(crate) current: f32,
     pub(crate) time: f32,
@@ -41,7 +40,7 @@ impl FadeIn {
     }
 
     /// Set a curve for fading.
-    /// 
+    ///
     /// Curve maps a value in `0..1` to a value in `0..1`,
     /// for example `|x| x`.
     pub fn with_curve(mut self, curve: fn(f32) -> f32) -> Self {
@@ -60,7 +59,7 @@ impl FadeOut {
     }
 
     /// Set a curve for fading.
-    /// 
+    ///
     /// Curve maps a value in `0..1` to a value in `0..1`,
     /// for example `|x| x`, does not need to be reversed.
     pub fn with_curve(mut self, curve: fn(f32) -> f32) -> Self {
@@ -74,7 +73,7 @@ pub fn fade_in(
     time: Res<Time<Virtual>>,
     mut query: Query<(Entity, &mut FadeIn, &mut Opacity)>,
 ) {
-    let dt = time.delta_seconds();
+    let dt = time.delta_secs();
     for (entity, mut fade_in, mut opacity) in &mut query {
         // Without a curve we can make this work with external modification.
         if let Some(curve) = fade_in.curve {
@@ -96,7 +95,7 @@ pub fn fade_out(
     time: Res<Time<Virtual>>,
     mut query: Query<(Entity, &mut FadeOut, &mut Opacity)>,
 ) {
-    let dt = time.delta_seconds();
+    let dt = time.delta_secs();
     for (entity, mut fade_out, mut opacity) in &mut query {
         // Without a curve we can make this work with external modification.
         if let Some(curve) = fade_out.curve {
