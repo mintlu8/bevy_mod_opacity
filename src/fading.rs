@@ -1,13 +1,13 @@
 use bevy::{
-    asset::Asset,
-    pbr::{ExtendedMaterial, Material, MaterialExtension, StandardMaterial},
-    prelude::{AlphaMode, Commands, Component, DespawnRecursiveExt, Entity, Query, Res},
+    prelude::{Commands, Component, DespawnRecursiveExt, Entity, Query, Res},
     time::{Time, Virtual},
 };
 
 use crate::Opacity;
 
 /// When inserted, gradually increase opacity to `1.0` within the given time.
+///
+/// If [`Opacity`] is not present, insert at `0.0`.
 ///
 /// This component is removed afterwards and opacity is
 /// guaranteed to be equal to `1.0` after this is removed.
@@ -20,6 +20,8 @@ pub struct FadeIn {
 }
 
 /// When inserted, gradually decrease opacity to `0.0` within the given time.
+///
+/// If [`Opacity`] is not present, insert at `1.0`.
 ///
 /// This entity and all its children will be removed afterwards.
 #[derive(Debug, Clone, Copy, Component)]
@@ -109,24 +111,5 @@ pub fn fade_out(
             opacity.0 = 0.;
             commands.entity(entity).despawn_recursive();
         }
-    }
-}
-
-pub trait AlphaModeMaterial: Asset {
-    fn set_alpha_mode(&mut self, alpha_mode: AlphaMode);
-}
-
-impl AlphaModeMaterial for StandardMaterial {
-    fn set_alpha_mode(&mut self, alpha_mode: AlphaMode) {
-        self.alpha_mode = alpha_mode;
-    }
-}
-
-impl<A: Material, B: MaterialExtension> AlphaModeMaterial for ExtendedMaterial<A, B>
-where
-    A: AlphaModeMaterial,
-{
-    fn set_alpha_mode(&mut self, alpha_mode: AlphaMode) {
-        self.base.set_alpha_mode(alpha_mode);
     }
 }

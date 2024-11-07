@@ -5,7 +5,7 @@ use quote::quote;
 use syn::{parse_macro_input, spanned::Spanned, Data, DeriveInput, Type};
 
 /// Declare a `Component` or `Asset` as affected by opacity.
-/// 
+///
 /// For more complicated behaviors, implement `OpacityQuery` manually.
 ///
 /// # Field Attributes

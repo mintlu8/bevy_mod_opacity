@@ -2,28 +2,32 @@
 //!
 //! # The [`struct@Opacity`] component
 //!
-//! When `Opacity` is put on an entity, all its descendants will be affected by the opacity value.
-//! Entity with no `Opacity` ancestor is not affected by this crate.
+//! When `Opacity` is inserted to an entity, the entity and all its descendants
+//! will be affected by the opacity value. Unlike bevy components like `Visibility`
+//! this does not need to be put on every entity in the tree.
+//! Entities with no `Opacity` ancestor will not not affected by this crate.
 //!
 //! # Support for native types
 //!
-//! We innately support `2d`, `3d` and `ui`, this includes `Sprite`, `Text`, `Handle<StandardMaterial>`,
-//! `Handle<ColorMaterial>`, `Image`, `BackgroundColor` and `ForegroundColor`.
+//! We innately support `2d`, `3d` and `ui`, this includes `Sprite`, `TextColor`, `StandardMaterial`,
+//! `ColorMaterial`, `Image`, `BackgroundColor` and `ForegroundColor`.
 //!
-//! Additionally you can implement [`OpacityComponent`] or derive `Opacity` to make your own types
-//! ang materials work with this crate, more complicated behaviors can be achieved through [`OpacityQuery`] by
-//! deriving [`QueryData`] and implementing [`OpacityQuery`] manually. This is the preferred way
-//! to add support for third party types.
+//! Additionally you can implement [`OpacityQuery`] or derive `Opacity` to make your own types
+//! and materials work with this crate. Combining `OpacityQuery` with custom `QueryData` can
+//! add support for third party types.
 //!
 //! # [`FadeIn`] and [`FadeOut`]
 //!
-//! These components adds a quick way to add and remove items from your scenes smoothly
-//! as a complement to `insert` and an alternative to `remove`.
+//! These components adds a quick way to add and remove entities from your scenes smoothly.
+//! You should add a [`FadeIn`] during the `spawn` call and use `entity.insert(FadeOut)` instead
+//! of `entity.despawn_recursive()`
 //!
-//! # My item is no fading
+//! # FAQ
 //!
-//! For 3d materials, we only affect handles with strong count `1`,
-//! meaning we won't try to modify materials with strong duplicates.
+//! * My 3d scene is not fading correctly
+//!
+//!  Ensure materials are duplicated and unique, since we write to the underlying material directly.
+//!  Also make sure `AlphaMode` is set to `Blend` if applicable.
 
 mod alpha;
 mod fading;

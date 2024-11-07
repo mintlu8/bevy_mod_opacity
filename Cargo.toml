@@ -27,7 +27,7 @@ bevy = { version = "0.15.0-rc.2", default-features = false, features = [
     "bevy_ui",
     "bevy_sprite",
 ]}
-bevy_mod_opacity_derive = { version = "0.1", optional = true, path = "./derive" }
+bevy_mod_opacity_derive = { version = "0.2", optional = true, path = "./derive" }
 
 
 [dev-dependencies]
