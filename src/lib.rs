@@ -49,6 +49,7 @@ use bevy::{
         system::{StaticSystemParam, SystemParam},
     },
     pbr::{ExtendedMaterial, Material, MaterialExtension, MeshMaterial3d, StandardMaterial},
+    prelude::ImageNode,
     prelude::{
         Children, Component, Entity, IntoSystemConfigs, IntoSystemSetConfigs, Query, Res, ResMut,
         Resource, SystemSet,
@@ -56,7 +57,6 @@ use bevy::{
     sprite::{ColorMaterial, MeshMaterial2d, Sprite},
     text::TextColor,
     transform::systems::{propagate_transforms, sync_simple_transforms},
-    ui::UiImage,
 };
 use fading::{fade_in, fade_out};
 pub use fading::{FadeIn, FadeOut};
@@ -235,7 +235,7 @@ impl Plugin for OpacityPlugin {
         app.add_systems(PostUpdate, calculate_opacity.in_set(Calculate));
         app.register_opacity_component::<Sprite>();
         app.register_opacity_component::<TextColor>();
-        app.register_opacity_component::<UiImage>();
+        app.register_opacity_component::<ImageNode>();
         app.register_opacity_material2d::<ColorMaterial>();
         app.register_opacity_material3d::<StandardMaterial>();
         app.register_opacity::<UiColorQuery>();

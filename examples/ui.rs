@@ -12,9 +12,10 @@ use bevy::{
     text::TextFont,
     ui::{
         AlignItems, BorderColor, BorderRadius, Display, FlexDirection, JustifyContent, Node,
-        UiImage, UiRect, Val,
+        UiRect, Val,
     },
     DefaultPlugins,
+    prelude::ImageNode,
 };
 use bevy_mod_opacity::{FadeIn, FadeOut, Opacity, OpacityPlugin, UiOpacity};
 
@@ -92,7 +93,7 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
                 .with_children(|build| {
                     build.spawn((Text::new("Made with"), style.clone()));
                     build.spawn((
-                        UiImage::new(assets.load("heart.png")),
+                        ImageNode::new(assets.load("heart.png")),
                         Node {
                             width: Val::Auto,
                             padding: UiRect::horizontal(Val::Px(5.0)),
@@ -102,7 +103,7 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
                     ));
                     build.spawn((Text::new("using"), style.clone()));
                     build.spawn((
-                        UiImage::new(assets.load("ferris.png")),
+                        ImageNode::new(assets.load("ferris.png")),
                         Node {
                             width: Val::Auto,
                             padding: UiRect::horizontal(Val::Px(5.0)),
@@ -112,7 +113,7 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
                     ));
                     build.spawn((Text::new("and"), style.clone()));
                     build.spawn((
-                        UiImage::new(assets.load("bevy.png")),
+                        ImageNode::new(assets.load("bevy.png")),
                         Node {
                             width: Val::Auto,
                             padding: UiRect::horizontal(Val::Px(5.0)),

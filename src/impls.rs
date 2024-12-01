@@ -3,10 +3,11 @@ use bevy::{
     color::Alpha,
     ecs::{query::QueryData, system::SystemParam},
     pbr::{Material, MeshMaterial3d, StandardMaterial},
+    prelude::ImageNode,
     prelude::{Component, ResMut},
     sprite::{ColorMaterial, Material2d, MeshMaterial2d, Sprite},
     text::TextColor,
-    ui::{BackgroundColor, BorderColor, UiImage},
+    ui::{BackgroundColor, BorderColor},
 };
 
 use crate::{OpacityAsset, OpacityQuery};
@@ -19,7 +20,7 @@ impl OpacityQuery for &mut Sprite {
     }
 }
 
-impl OpacityQuery for &mut UiImage {
+impl OpacityQuery for &mut ImageNode {
     type Cx = ();
 
     fn apply_opacity(this: &mut Self::Item<'_>, _: &mut (), opacity: f32) {
