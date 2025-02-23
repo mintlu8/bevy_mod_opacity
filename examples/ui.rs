@@ -4,6 +4,7 @@ use bevy::{
     color::Color,
     math::Vec3,
     pbr::AmbientLight,
+    prelude::ImageNode,
     prelude::{
         BuildChildren, Camera, Camera2d, Camera3d, ChildBuild, Commands, Component, Res, Text,
         Transform,
@@ -15,7 +16,6 @@ use bevy::{
         UiRect, Val,
     },
     DefaultPlugins,
-    prelude::ImageNode,
 };
 use bevy_mod_opacity::{FadeIn, FadeOut, Opacity, OpacityPlugin, UiOpacity};
 

@@ -1,6 +1,5 @@
 use bevy::{
-    prelude::{Commands, Component, DespawnRecursiveExt, Entity, Query, Res},
-    time::{Time, Virtual},
+    ecs::query::Without, prelude::{Commands, Component, DespawnRecursiveExt, Entity, Query, Res}, time::{Time, Virtual}
 };
 
 use crate::Opacity;
@@ -73,7 +72,7 @@ impl FadeOut {
 pub fn fade_in(
     mut commands: Commands,
     time: Res<Time<Virtual>>,
-    mut query: Query<(Entity, &mut FadeIn, &mut Opacity)>,
+    mut query: Query<(Entity, &mut FadeIn, &mut Opacity), Without<FadeOut>>,
 ) {
     let dt = time.delta_secs();
     for (entity, mut fade_in, mut opacity) in &mut query {
