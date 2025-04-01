@@ -30,7 +30,6 @@
 //!  Also make sure `AlphaMode` is set to `Blend` if applicable.
 
 mod alpha;
-mod fading;
 mod impls;
 #[doc(hidden)]
 pub use alpha::set_alpha;
@@ -39,7 +38,10 @@ pub use bevy::asset::{Assets, Handle};
 #[doc(hidden)]
 pub use bevy::ecs::query::WorldQuery;
 
+use bevy::ecs::system::Commands;
+use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::sprite::Material2d;
+use bevy::time::{Time, Virtual};
 use bevy::{
     app::{App, Plugin, PostUpdate},
     asset::Asset,
@@ -58,9 +60,8 @@ use bevy::{
     text::TextColor,
     transform::systems::{propagate_transforms, sync_simple_transforms},
 };
-use fading::{fade_in, fade_out};
-pub use fading::{FadeIn, FadeOut};
 pub use impls::UiOpacity;
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
 use std::marker::PhantomData;
 
 #[cfg(feature = "derive")]
@@ -69,11 +70,83 @@ use impls::UiColorQuery;
 
 /// [`Component`] of opacity of this entity and its children.
 #[derive(Debug, Clone, Copy, Component, PartialEq, PartialOrd)]
-pub struct Opacity(pub f32);
+pub struct Opacity {
+    current: f32,
+    target: f32,
+    speed: f32,
+    despawns: bool,
+}
 
 impl Opacity {
-    pub const INVISIBLE: Opacity = Opacity(0.);
-    pub const FULL: Opacity = Opacity(1.);
+    /// Opacity `0.0`.
+    pub const INVISIBLE: Opacity = Opacity::new(0.);
+    /// Opacity `1.0`.
+    pub const OPAQUE: Opacity = Opacity::new(1.);
+
+    /// Creates a new opacity value.
+    pub const fn new(opacity: f32) -> Opacity {
+        Opacity {
+            current: opacity,
+            target: opacity,
+            speed: 0.0,
+            despawns: false,
+        }
+    }
+
+    /// Returns the current opacity value.
+    pub const fn get(&self) -> f32 {
+        self.current
+    }
+
+    /// Returns the target opacity value.
+    pub const fn get_target(&self) -> f32 {
+        self.target
+    }
+
+    /// Set the opacity value and cancels interpolation or fade out.
+    pub fn set(&mut self, opacity: f32) {
+        *self = Self::new(opacity)
+    }
+
+    /// Set opacity to `0.0` and interpolate to `1.0`.
+    pub const fn new_fade_in(time: f32) -> Opacity {
+        Opacity {
+            current: 0.0,
+            target: 1.0,
+            speed: 1.0 / time,
+            despawns: false,
+        }
+    }
+
+    /// Interpolate opacity to `1.0`.
+    pub fn fade_in(&mut self, time: f32) {
+        self.target = 1.0;
+        self.despawns = false;
+        self.speed = 1.0 / time;
+    }
+
+    /// Interpolate opacity to `0.0` and despawns the entity when that happens.
+    /// 
+    /// Deletion can be stopped by calling `set` or `fade_in`.
+    pub fn fade_out(&mut self, time: f32) {
+        self.target = 0.0;
+        self.despawns = true;
+        self.speed = -1.0 / time;
+    }
+
+    /// Interpolate opacity to a specific value.
+    pub fn interpolate_to(&mut self, opacity: f32, time: f32) {
+        self.target = opacity;
+        self.despawns = false;
+        self.speed = (opacity - self.current) / time;
+    }
+
+    /// Interpolate opacity to a specific value.
+    pub fn interpolate_by_speed(&mut self, opacity: f32, time_zero_to_one: f32) {
+        self.target = opacity;
+        self.despawns = false;
+        self.speed = (opacity - self.current).signum() / time_zero_to_one;
+    }
 }
 
 /// # Why default `1.0`
@@ -81,7 +154,19 @@ impl Opacity {
 /// It's better to show something by default than hide it implicitly.
 impl Default for Opacity {
     fn default() -> Self {
-        Self(1.0)
+        Self::OPAQUE
+    }
+}
+
+impl Serialize for Opacity {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.target.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Opacity {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        Ok(Opacity::new(f32::deserialize(deserializer)?))
     }
 }
 
@@ -130,6 +215,36 @@ where
     }
 }
 
+fn interpolate (
+    mut commands: Commands,
+    time: Res<Time<Virtual>>,
+    mut query: Query<(Entity, &mut Opacity)>,
+) {
+    let dt = time.delta_secs();
+    for (entity, mut opacity) in &mut query {
+        match opacity.speed {
+            0.0 => continue,
+            s if s > 0.0 => {
+                opacity.current += opacity.speed * dt;
+                if opacity.current > opacity.target {
+                    opacity.current = opacity.target;
+                    opacity.speed = 0.0;
+                }
+            },
+            _ => {
+                opacity.current += opacity.speed * dt;
+                if opacity.current < opacity.target {
+                    opacity.current = opacity.target;
+                    opacity.speed = 0.0;
+                }
+            }
+        }
+        if opacity.despawns && opacity.current <= 0.0 {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+}
+
 fn calculate_opacity(
     mut map: ResMut<OpacityMap>,
     query: Query<(Entity, &Opacity)>,
@@ -141,12 +256,12 @@ fn calculate_opacity(
         if map.0.contains_key(&entity) {
             continue;
         }
-        stack.push((entity, opacity.0));
+        stack.push((entity, opacity.get()));
         while let Some((entity, opacity)) = stack.pop() {
             map.0.insert(entity, opacity);
             if let Ok(children) = children.get(entity) {
                 for entity in children.iter().copied() {
-                    let op = query.get(entity).map(|(_, x)| x.0).unwrap_or(1.);
+                    let op = query.get(entity).map(|(_, x)| x.get()).unwrap_or(1.);
                     stack.push((entity, opacity * op));
                 }
             }
@@ -231,7 +346,7 @@ impl Plugin for OpacityPlugin {
                 .before(CheckVisibility)
                 .before(UpdateFrusta),
         );
-        app.add_systems(PostUpdate, (fade_in, fade_out).in_set(Fading));
+        app.add_systems(PostUpdate, interpolate.in_set(Fading));
         app.add_systems(PostUpdate, calculate_opacity.in_set(Calculate));
         app.register_opacity_component::<Sprite>();
         app.register_opacity_component::<TextColor>();

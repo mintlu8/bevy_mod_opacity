@@ -17,7 +17,7 @@ use bevy::{
     },
     DefaultPlugins,
 };
-use bevy_mod_opacity::{FadeIn, FadeOut, Opacity, OpacityPlugin, UiOpacity};
+use bevy_mod_opacity::{Opacity, OpacityPlugin, UiOpacity};
 
 #[derive(Debug, Component)]
 pub struct OnDelete;
@@ -70,7 +70,7 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
             border: UiRect::all(Val::Px(2.)),
             ..Default::default()
         })
-        .insert((Opacity::INVISIBLE, FadeIn::new(10.)))
+        .insert(Opacity::new_fade_in(10.))
         .with_children(|build| {
             build
                 .spawn((
@@ -127,13 +127,17 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn((
         SceneRoot(assets.load("rings1.glb#Scene0")),
         Transform::from_translation(Vec3::new(1., 0., -1.)),
-        FadeOut::new(4.),
+        {
+            let mut op = Opacity::OPAQUE;
+            op.fade_out(10.);
+            op
+        },
         OnDelete,
     ));
     commands.spawn((
         SceneRoot(assets.load("rings2.glb#Scene0")),
         Transform::from_translation(Vec3::new(-1., 0., 1.)),
-        FadeIn::new(4.),
+        Opacity::new_fade_in(4.),
         OnDelete,
     ));
 }
