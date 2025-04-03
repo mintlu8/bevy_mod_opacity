@@ -5,10 +5,7 @@ use bevy::{
     math::Vec3,
     pbr::AmbientLight,
     prelude::ImageNode,
-    prelude::{
-        BuildChildren, Camera, Camera2d, Camera3d, ChildBuild, Commands, Component, Res, Text,
-        Transform,
-    },
+    prelude::{Camera, Camera2d, Camera3d, Commands, Component, Res, Text, Transform},
     scene::SceneRoot,
     text::TextFont,
     ui::{
@@ -35,6 +32,7 @@ pub fn main() {
         .insert_resource(AmbientLight {
             color: Color::WHITE,
             brightness: 1000.,
+            ..Default::default()
         })
         .add_systems(Startup, init)
         .run();

@@ -137,7 +137,7 @@ pub fn opacity(tokens: TokenStream) -> TokenStream {
                     type Cx = ();
 
                     fn apply_opacity(
-                        this: &mut <Self as #crate0::WorldQuery>::Item<'_>,
+                        this: &mut <Self as #crate0::QueryData>::Item<'_>,
                         _: &mut (),
                         opacity: f32,
                     ) {

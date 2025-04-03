@@ -36,10 +36,10 @@ pub use alpha::set_alpha;
 #[doc(hidden)]
 pub use bevy::asset::{Assets, Handle};
 #[doc(hidden)]
-pub use bevy::ecs::query::WorldQuery;
+pub use bevy::ecs::query::QueryData;
 
+use bevy::ecs::schedule::{ApplyDeferred, IntoScheduleConfigs};
 use bevy::ecs::system::Commands;
-use bevy::hierarchy::DespawnRecursiveExt;
 use bevy::sprite::Material2d;
 use bevy::time::{Time, Virtual};
 use bevy::{
@@ -47,21 +47,17 @@ use bevy::{
     asset::Asset,
     ecs::{
         entity::EntityHashMap,
-        query::QueryData,
         system::{StaticSystemParam, SystemParam},
     },
     pbr::{ExtendedMaterial, Material, MaterialExtension, MeshMaterial3d, StandardMaterial},
     prelude::ImageNode,
-    prelude::{
-        Children, Component, Entity, IntoSystemConfigs, IntoSystemSetConfigs, Query, Res, ResMut,
-        Resource, SystemSet,
-    },
+    prelude::{Children, Component, Entity, Query, Res, ResMut, Resource, SystemSet},
     sprite::{ColorMaterial, MeshMaterial2d, Sprite},
     text::TextColor,
-    transform::systems::{propagate_transforms, sync_simple_transforms},
+    transform::systems::{propagate_parent_transforms, sync_simple_transforms},
 };
 pub use impls::UiOpacity;
-use serde::{Serialize, Deserialize, Serializer, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::marker::PhantomData;
 
 #[cfg(feature = "derive")]
@@ -108,6 +104,18 @@ impl Opacity {
         *self = Self::new(opacity)
     }
 
+    pub const fn is_opaque(&self) -> bool {
+        self.current >= 1.0
+    }
+
+    pub const fn is_visible(&self) -> bool {
+        self.current > 0.0
+    }
+
+    pub const fn is_invisible(&self) -> bool {
+        self.current <= 0.0
+    }
+
     /// Set opacity to `0.0` and interpolate to `1.0`.
     pub const fn new_fade_in(time: f32) -> Opacity {
         Opacity {
@@ -118,6 +126,14 @@ impl Opacity {
         }
     }
 
+    /// Interpolate to `1.0`.
+    pub const fn and_fade_in(mut self, time: f32) -> Self {
+        self.target = 1.0;
+        self.speed = 1.0 / time;
+        self.despawns = false;
+        self
+    }
+
     /// Interpolate opacity to `1.0`.
     pub fn fade_in(&mut self, time: f32) {
         self.target = 1.0;
@@ -126,7 +142,7 @@ impl Opacity {
     }
 
     /// Interpolate opacity to `0.0` and despawns the entity when that happens.
-    /// 
+    ///
     /// Deletion can be stopped by calling `set` or `fade_in`.
     pub fn fade_out(&mut self, time: f32) {
         self.target = 0.0;
@@ -215,7 +231,7 @@ where
     }
 }
 
-fn interpolate (
+fn interpolate(
     mut commands: Commands,
     time: Res<Time<Virtual>>,
     mut query: Query<(Entity, &mut Opacity)>,
@@ -230,7 +246,7 @@ fn interpolate (
                     opacity.current = opacity.target;
                     opacity.speed = 0.0;
                 }
-            },
+            }
             _ => {
                 opacity.current += opacity.speed * dt;
                 if opacity.current < opacity.target {
@@ -240,7 +256,7 @@ fn interpolate (
             }
         }
         if opacity.despawns && opacity.current <= 0.0 {
-            commands.entity(entity).despawn_recursive();
+            commands.entity(entity).despawn();
         }
     }
 }
@@ -341,12 +357,13 @@ impl Plugin for OpacityPlugin {
             PostUpdate,
             (Fading, PostFade, Calculate, Apply)
                 .chain()
-                .after(propagate_transforms)
+                .after(propagate_parent_transforms)
                 .after(sync_simple_transforms)
                 .before(CheckVisibility)
                 .before(UpdateFrusta),
         );
         app.add_systems(PostUpdate, interpolate.in_set(Fading));
+        app.add_systems(PostUpdate, ApplyDeferred.in_set(PostFade));
         app.add_systems(PostUpdate, calculate_opacity.in_set(Calculate));
         app.register_opacity_component::<Sprite>();
         app.register_opacity_component::<TextColor>();
