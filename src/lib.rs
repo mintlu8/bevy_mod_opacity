@@ -256,7 +256,7 @@ fn interpolate(
             }
         }
         if opacity.despawns && opacity.current <= 0.0 {
-            commands.entity(entity).despawn();
+            commands.entity(entity).try_despawn();
         }
     }
 }
