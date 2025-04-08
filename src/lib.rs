@@ -4,7 +4,7 @@
 //!
 //! When `Opacity` is inserted to an entity, the entity and all its descendants
 //! will be affected by the opacity value. Unlike bevy components like `Visibility`
-//! this does not need to be put on every entity in the tree.
+//! `Opacity` does not need to be put on every entity in the tree.
 //! Entities with no `Opacity` ancestor will not not affected by this crate.
 //!
 //! # Support for native types
