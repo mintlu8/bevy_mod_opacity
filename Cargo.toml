@@ -21,7 +21,7 @@ default = ["derive"]
 derive = ["bevy_mod_opacity_derive"]
 
 [dependencies]
-bevy = { version = "0.16.0-rc.3", default-features = false, features = [
+bevy = { version = "0.16.0", default-features = false, features = [
     "bevy_render", 
     "bevy_pbr",
     "bevy_ui",
@@ -32,4 +32,4 @@ serde = { version = "1.0.219", default-features = false }
 
 
 [dev-dependencies]
-bevy = "0.16.0-rc.3"
+bevy = "0.16.0"
