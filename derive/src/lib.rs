@@ -99,7 +99,7 @@ pub fn opacity(tokens: TokenStream) -> TokenStream {
                             &mut self,
                             opacity: f32,
                         ) {
-                            #(#crate0::set_alpha(&mut self.#fields, opacity);)*
+                            #(#crate0::Alpha::set_alpha(&mut self.#fields, opacity);)*
                         }
                     }
                 };
@@ -112,7 +112,7 @@ pub fn opacity(tokens: TokenStream) -> TokenStream {
                     impl #crate0::OpacityMaterialExtension<#ty> for #name {
                         fn apply_opacity(a: &mut #ty, b: &mut Self, opacity: f32) {
                             #crate0::OpacityAsset::apply_opacity(a, opacity);
-                            #(#crate0::set_alpha(&mut b.#fields, opacity);)*
+                            #(#crate0::Alpha::set_alpha(&mut b.#fields, opacity);)*
                         }
                     }
                 };
@@ -123,7 +123,7 @@ pub fn opacity(tokens: TokenStream) -> TokenStream {
                 const _: () =  {
                     impl #crate0::OpacityMaterialExtension<#ty> for #name {
                         fn apply_opacity(a: &mut #ty, b: &mut Self, opacity: f32) {
-                            #(#crate0::set_alpha(&mut b.#fields, opacity);)*
+                            #(#crate0::Alpha::set_alpha(&mut b.#fields, opacity);)*
                         }
                     }
                 };
@@ -137,11 +137,11 @@ pub fn opacity(tokens: TokenStream) -> TokenStream {
                     type Cx = ();
 
                     fn apply_opacity(
-                        this: &mut <Self as #crate0::QueryData>::Item<'_>,
+                        this: &mut <Self as #crate0::QueryData>::Item<'_, '_>,
                         _: &mut (),
                         opacity: f32,
                     ) {
-                        #(#crate0::set_alpha(&mut this.#fields, opacity);)*
+                        #(#crate0::Alpha::set_alpha(&mut this.#fields, opacity);)*
                     }
                 }
             };

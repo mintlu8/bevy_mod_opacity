@@ -3,7 +3,8 @@ use bevy::{
     asset::Assets,
     color::Alpha,
     ecs::system::{ResMut, SystemParam},
-    sprite::{ColorMaterial, Material2d, MeshMaterial2d, Sprite, Wireframe2dMaterial},
+    sprite::Sprite,
+    sprite_render::{ColorMaterial, Material2d, MeshMaterial2d, Wireframe2dMaterial},
 };
 
 use crate::{OpacityAsset, OpacityExtension, OpacityQuery};
@@ -11,7 +12,7 @@ use crate::{OpacityAsset, OpacityExtension, OpacityQuery};
 impl OpacityQuery for &mut Sprite {
     type Cx = ();
 
-    fn apply_opacity(this: &mut Self::Item<'_>, _: &mut (), opacity: f32) {
+    fn apply_opacity(this: &mut Self::Item<'_, '_>, _: &mut (), opacity: f32) {
         this.color.set_alpha(opacity);
     }
 }
@@ -35,7 +36,7 @@ where
     type Cx = ResMut<'static, Assets<T>>;
 
     fn apply_opacity(
-        this: &mut Self::Item<'_>,
+        this: &mut Self::Item<'_, '_>,
         cx: &mut <Self::Cx as SystemParam>::Item<'_, '_>,
         opacity: f32,
     ) {

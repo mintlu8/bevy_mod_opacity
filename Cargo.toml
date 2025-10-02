@@ -18,17 +18,17 @@ keywords = ["bevy", "opacity", "fading"]
 
 [features]
 default = ["2d", "3d", "ui", "derive"]
-2d = ["bevy/bevy_sprite", "bevy/bevy_text"]
+2d = ["bevy/bevy_sprite", "bevy/bevy_sprite_render", "bevy/bevy_text"]
 3d = ["bevy/bevy_pbr"]
 ui = ["bevy/bevy_ui", "bevy/bevy_text"]
 derive = ["bevy_mod_opacity_derive"]
 serde = ["dep:serde"]
 
 [dependencies]
-bevy = { version = "0.16.0", default-features = false, features = ["bevy_render", "bevy_asset"]}
+bevy = { version = "0.17.0", default-features = false, features = ["bevy_render", "bevy_asset"]}
 bevy_mod_opacity_derive = { version = "0.3", optional = true, path = "./derive" }
 serde = { version = "1", default-features = false, optional = true }
 
 
 [dev-dependencies]
-bevy = "0.16.0"
+bevy = "0.17.0"

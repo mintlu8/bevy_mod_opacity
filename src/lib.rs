@@ -1,12 +1,9 @@
 #![doc = include_str!("../README.md")]
-
-mod alpha;
-#[doc(hidden)]
-pub use alpha::set_alpha;
 #[doc(hidden)]
 pub use bevy::asset::{Assets, Handle};
-#[allow(unused)]
-use bevy::color::Alpha;
+use bevy::camera::visibility::VisibilitySystems;
+#[doc(hidden)]
+pub use bevy::color::Alpha;
 #[doc(hidden)]
 pub use bevy::ecs::query::QueryData;
 
@@ -126,7 +123,7 @@ impl Opacity {
 
     /// Interpolate opacity to `0.0` and despawns the entity when that happens.
     ///
-    /// Deletion can be stopped by calling `set`, `fade_in` or `interpolate_to` before fade out completed. 
+    /// Deletion can be stopped by calling `set`, `fade_in` or `interpolate_to` before fade out completed.
     /// If deletion is not desired, call `interpolate_to` with opacity `0.0` instead.
     pub fn fade_out(&mut self, time: f32) {
         self.target = 0.0;
@@ -195,7 +192,7 @@ pub trait OpacityQuery: QueryData + Send + Sync {
     type Cx: SystemParam;
 
     fn apply_opacity(
-        this: &mut Self::Item<'_>,
+        this: &mut Self::Item<'_, '_>,
         cx: &mut <Self::Cx as SystemParam>::Item<'_, '_>,
         opacity: f32,
     );
@@ -296,7 +293,9 @@ pub trait OpacityExtension {
     where
         &'static mut C: OpacityQuery;
     #[cfg(feature = "2d")]
-    fn register_opacity_material2d<M: bevy::sprite::Material2d + OpacityAsset>(&mut self) -> &mut Self;
+    fn register_opacity_material2d<M: bevy::sprite_render::Material2d + OpacityAsset>(
+        &mut self,
+    ) -> &mut Self;
     #[cfg(feature = "3d")]
     fn register_opacity_material3d<M: bevy::pbr::Material + OpacityAsset>(&mut self) -> &mut Self;
 }
@@ -316,8 +315,12 @@ impl OpacityExtension for App {
     }
 
     #[cfg(feature = "2d")]
-    fn register_opacity_material2d<M: bevy::sprite::Material2d + OpacityAsset>(&mut self) -> &mut Self {
-        self.add_plugins(OpacityQueryPlugin::<&bevy::sprite::MeshMaterial2d<M>>(PhantomData));
+    fn register_opacity_material2d<M: bevy::sprite_render::Material2d + OpacityAsset>(
+        &mut self,
+    ) -> &mut Self {
+        self.add_plugins(
+            OpacityQueryPlugin::<&bevy::sprite_render::MeshMaterial2d<M>>(PhantomData),
+        );
         self
     }
 
@@ -334,14 +337,13 @@ impl OpacityExtension for App {
 impl OpacityQuery for &mut bevy::text::TextColor {
     type Cx = ();
 
-    fn apply_opacity(this: &mut Self::Item<'_>, _: &mut (), opacity: f32) {
+    fn apply_opacity(this: &mut Self::Item<'_, '_>, _: &mut (), opacity: f32) {
         this.set_alpha(opacity);
     }
 }
 
 impl Plugin for OpacityPlugin {
     fn build(&self, app: &mut App) {
-        use bevy::render::view::VisibilitySystems::*;
         use OpacitySet::*;
         app.init_resource::<OpacityMap>();
         app.configure_sets(
@@ -350,8 +352,8 @@ impl Plugin for OpacityPlugin {
                 .chain()
                 .after(propagate_parent_transforms)
                 .after(sync_simple_transforms)
-                .before(CheckVisibility)
-                .before(UpdateFrusta),
+                .before(VisibilitySystems::CheckVisibility)
+                .before(VisibilitySystems::UpdateFrusta),
         );
         app.add_systems(PostUpdate, interpolate.in_set(Fading));
         app.add_systems(PostUpdate, ApplyDeferred.in_set(PostFade));

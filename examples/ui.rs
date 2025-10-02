@@ -2,10 +2,9 @@ use bevy::{
     app::{App, Startup},
     asset::AssetServer,
     color::Color,
+    light::AmbientLight,
     math::Vec3,
-    pbr::AmbientLight,
-    prelude::ImageNode,
-    prelude::{Camera, Camera2d, Camera3d, Commands, Component, Res, Text, Transform},
+    prelude::{Camera, Camera2d, Camera3d, Commands, Component, ImageNode, Res, Text, Transform},
     scene::SceneRoot,
     text::TextFont,
     ui::{
@@ -84,7 +83,7 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
                         padding: UiRect::all(Val::Px(10.)),
                         ..Default::default()
                     },
-                    BorderColor(Color::WHITE),
+                    BorderColor::all(Color::WHITE),
                     BorderRadius::all(Val::Px(20.)),
                     UiOpacity::Border,
                 ))

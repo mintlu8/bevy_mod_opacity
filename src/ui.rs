@@ -10,14 +10,14 @@ use bevy::{
 impl OpacityQuery for &mut ImageNode {
     type Cx = ();
 
-    fn apply_opacity(this: &mut Self::Item<'_>, _: &mut (), opacity: f32) {
+    fn apply_opacity(this: &mut Self::Item<'_, '_>, _: &mut (), opacity: f32) {
         this.color.set_alpha(opacity);
     }
 }
 
 /// Determine whether [`BorderColor`] and [`BackgroundColor`] are controlled by
 /// opacity or should stay transparent.
-/// 
+///
 /// Items without this component are ignored.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Component)]
 pub enum UiOpacity {
@@ -43,17 +43,23 @@ pub struct UiColorQuery {
 impl OpacityQuery for UiColorQuery {
     type Cx = ();
 
-    fn apply_opacity(this: &mut Self::Item<'_>, _: &mut (), opacity: f32) {
+    fn apply_opacity(this: &mut Self::Item<'_, '_>, _: &mut (), opacity: f32) {
         match this.ui_color {
             UiOpacity::None => (),
             UiOpacity::Border => {
-                this.border.0.set_alpha(opacity);
+                this.border.left.set_alpha(opacity);
+                this.border.right.set_alpha(opacity);
+                this.border.top.set_alpha(opacity);
+                this.border.bottom.set_alpha(opacity);
             }
             UiOpacity::Background => {
                 this.background.0.set_alpha(opacity);
             }
             UiOpacity::Both => {
-                this.border.0.set_alpha(opacity);
+                this.border.left.set_alpha(opacity);
+                this.border.right.set_alpha(opacity);
+                this.border.top.set_alpha(opacity);
+                this.border.bottom.set_alpha(opacity);
                 this.background.0.set_alpha(opacity);
             }
         }

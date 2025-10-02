@@ -48,7 +48,7 @@ where
     type Cx = ResMut<'static, Assets<T>>;
 
     fn apply_opacity(
-        this: &mut Self::Item<'_>,
+        this: &mut Self::Item<'_, '_>,
         cx: &mut <Self::Cx as SystemParam>::Item<'_, '_>,
         opacity: f32,
     ) {
