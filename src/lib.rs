@@ -102,52 +102,52 @@ impl Opacity {
     }
 
     /// Set opacity to `0.0` and interpolate to `1.0`.
-    pub const fn new_fade_in(time: f32) -> Opacity {
+    pub const fn new_fade_in(seconds: f32) -> Opacity {
         Opacity {
             current: 0.0,
             target: 1.0,
-            speed: 1.0 / time,
+            speed: 1.0 / seconds,
             despawns: false,
         }
     }
 
     /// Interpolate to `1.0`.
-    pub const fn and_fade_in(mut self, time: f32) -> Self {
+    pub const fn and_fade_in(mut self, seconds: f32) -> Self {
         self.target = 1.0;
-        self.speed = 1.0 / time;
+        self.speed = 1.0 / seconds;
         self.despawns = false;
         self
     }
 
     /// Interpolate opacity to `1.0`.
-    pub fn fade_in(&mut self, time: f32) {
+    pub fn fade_in(&mut self, seconds: f32) {
         self.target = 1.0;
         self.despawns = false;
-        self.speed = 1.0 / time;
+        self.speed = 1.0 / seconds;
     }
 
     /// Interpolate opacity to `0.0` and despawns the entity when that happens.
     ///
     /// Deletion can be stopped by calling `set`, `fade_in` or `interpolate_to` before fade out completed.
     /// If deletion is not desired, call `interpolate_to` with opacity `0.0` instead.
-    pub fn fade_out(&mut self, time: f32) {
+    pub fn fade_out(&mut self, seconds: f32) {
         self.target = 0.0;
         self.despawns = true;
-        self.speed = -1.0 / time;
+        self.speed = -1.0 / seconds;
     }
 
     /// Interpolate opacity to a specific value.
-    pub fn interpolate_to(&mut self, opacity: f32, time: f32) {
+    pub fn interpolate_to(&mut self, opacity: f32, seconds: f32) {
         self.target = opacity;
         self.despawns = false;
-        self.speed = (opacity - self.current) / time;
+        self.speed = (opacity - self.current) / seconds;
     }
 
     /// Interpolate opacity to a specific value.
-    pub fn interpolate_by_speed(&mut self, opacity: f32, time_zero_to_one: f32) {
+    pub fn interpolate_by_speed(&mut self, opacity: f32, seconds_zero_to_one: f32) {
         self.target = opacity;
         self.despawns = false;
-        self.speed = (opacity - self.current).signum() / time_zero_to_one;
+        self.speed = (opacity - self.current).signum() / seconds_zero_to_one;
     }
 }
 
