@@ -23,6 +23,7 @@ default = ["2d", "3d", "ui", "derive"]
 ui = ["bevy/bevy_ui", "bevy/bevy_text"]
 derive = ["bevy_mod_opacity_derive"]
 serde = ["dep:serde"]
+reflect = []
 
 [dependencies]
 bevy = { version = "0.17.0", default-features = false, features = ["bevy_render", "bevy_asset"]}

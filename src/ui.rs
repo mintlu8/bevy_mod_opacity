@@ -1,4 +1,6 @@
 use crate::{OpacityExtension, OpacityQuery};
+#[cfg(feature = "reflect")]
+use bevy::prelude::{ReflectComponent, ReflectDefault};
 use bevy::ui::{BackgroundColor, BorderColor};
 use bevy::{
     app::App,
@@ -20,6 +22,8 @@ impl OpacityQuery for &mut ImageNode {
 ///
 /// Items without this component are ignored.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Component)]
+#[cfg_attr(feature = "reflect", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Component, Default))]
 pub enum UiOpacity {
     /// Both should stay transparent
     #[default]

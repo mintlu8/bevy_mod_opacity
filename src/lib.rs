@@ -25,6 +25,9 @@ use std::marker::PhantomData;
 #[cfg(feature = "derive")]
 pub use bevy_mod_opacity_derive::Opacity;
 
+#[cfg(feature = "reflect")]
+use bevy::prelude::{ReflectComponent, ReflectDefault};
+
 #[cfg(feature = "3d")]
 mod pbr;
 #[cfg(feature = "2d")]
@@ -38,6 +41,8 @@ pub use ui::UiOpacity;
 
 /// [`Component`] of opacity of this entity and its children.
 #[derive(Debug, Clone, Copy, Component, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "reflect", derive(bevy::prelude::Reflect))]
+#[cfg_attr(feature = "reflect", reflect(Component, Default))]
 pub struct Opacity {
     current: f32,
     target: f32,
