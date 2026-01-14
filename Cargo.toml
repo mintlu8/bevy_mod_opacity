@@ -3,7 +3,7 @@ members = ["derive"]
 
 [package]
 name = "bevy_mod_opacity"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 
 authors = ["Mincong Lu <mintlux667@gmail.com>"]
@@ -26,10 +26,10 @@ serde = ["dep:serde"]
 reflect = []
 
 [dependencies]
-bevy = { version = "0.17.0", default-features = false, features = ["bevy_render", "bevy_asset"]}
+bevy = { version = "0.18.0", default-features = false, features = ["bevy_render", "bevy_asset"]}
 bevy_mod_opacity_derive = { version = "0.3", optional = true, path = "./derive" }
 serde = { version = "1", default-features = false, optional = true }
 
 
 [dev-dependencies]
-bevy = "0.17.0"
+bevy = "0.18.0"

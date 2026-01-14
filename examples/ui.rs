@@ -2,7 +2,7 @@ use bevy::{
     app::{App, Startup},
     asset::AssetServer,
     color::Color,
-    light::AmbientLight,
+    light::GlobalAmbientLight,
     math::Vec3,
     prelude::{Camera, Camera2d, Camera3d, Commands, Component, ImageNode, Res, Text, Transform},
     scene::SceneRoot,
@@ -28,7 +28,7 @@ pub fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(OpacityPlugin)
-        .insert_resource(AmbientLight {
+        .insert_resource(GlobalAmbientLight {
             color: Color::WHITE,
             brightness: 1000.,
             ..Default::default()
@@ -81,10 +81,10 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
                         column_gap: Val::Px(5.0),
                         border: UiRect::all(Val::Px(5.)),
                         padding: UiRect::all(Val::Px(10.)),
+                        border_radius: BorderRadius::all(Val::Px(20.)),
                         ..Default::default()
                     },
                     BorderColor::all(Color::WHITE),
-                    BorderRadius::all(Val::Px(20.)),
                     UiOpacity::Border,
                 ))
                 .with_children(|build| {
