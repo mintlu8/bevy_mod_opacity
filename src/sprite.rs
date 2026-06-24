@@ -40,7 +40,7 @@ where
         cx: &mut <Self::Cx as SystemParam>::Item<'_, '_>,
         opacity: f32,
     ) {
-        if let Some(mat) = cx.get_mut(this.id()) {
+        if let Some(mut mat) = cx.get_mut(this.id()) {
             mat.apply_opacity(opacity);
         }
     }

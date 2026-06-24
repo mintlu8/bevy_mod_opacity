@@ -1,17 +1,8 @@
 use bevy::{
-    app::{App, Startup},
-    asset::AssetServer,
-    color::Color,
-    light::GlobalAmbientLight,
-    math::Vec3,
-    prelude::{Camera, Camera2d, Camera3d, Commands, Component, ImageNode, Res, Text, Transform},
-    scene::SceneRoot,
-    text::TextFont,
-    ui::{
+    DefaultPlugins, app::{App, Startup}, asset::AssetServer, color::Color, light::GlobalAmbientLight, math::Vec3, prelude::{Camera, Camera2d, Camera3d, Commands, Component, ImageNode, Res, Text, Transform}, text::{FontSize, TextFont}, ui::{
         AlignItems, BorderColor, BorderRadius, Display, FlexDirection, JustifyContent, Node,
         UiRect, Val,
-    },
-    DefaultPlugins,
+    }, world_serialization::WorldAssetRoot,
 };
 use bevy_mod_opacity::{Opacity, OpacityPlugin, UiOpacity};
 
@@ -39,7 +30,7 @@ pub fn main() {
 
 pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
     let style = TextFont {
-        font_size: 64.0,
+        font_size: FontSize::Px(64.0),
         ..Default::default()
     };
     commands.spawn((
@@ -122,7 +113,7 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
                 });
         });
     commands.spawn((
-        SceneRoot(assets.load("rings1.glb#Scene0")),
+        WorldAssetRoot(assets.load("rings1.glb#Scene0")),
         Transform::from_translation(Vec3::new(1., 0., -1.)),
         {
             let mut op = Opacity::OPAQUE;
@@ -132,7 +123,7 @@ pub fn init(mut commands: Commands, assets: Res<AssetServer>) {
         OnDelete,
     ));
     commands.spawn((
-        SceneRoot(assets.load("rings2.glb#Scene0")),
+        WorldAssetRoot(assets.load("rings2.glb#Scene0")),
         Transform::from_translation(Vec3::new(-1., 0., 1.)),
         Opacity::new_fade_in(4.),
         OnDelete,

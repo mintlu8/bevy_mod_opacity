@@ -4,6 +4,7 @@ pub use bevy::asset::{Assets, Handle};
 use bevy::camera::visibility::VisibilitySystems;
 #[doc(hidden)]
 pub use bevy::color::Alpha;
+use bevy::ecs::query::IterQueryData;
 #[doc(hidden)]
 pub use bevy::ecs::query::QueryData;
 
@@ -193,7 +194,7 @@ pub enum OpacitySet {
 }
 
 /// A [`QueryData`] with an opacity value.
-pub trait OpacityQuery: QueryData + Send + Sync {
+pub trait OpacityQuery: IterQueryData + Send + Sync {
     type Cx: SystemParam;
 
     fn apply_opacity(
