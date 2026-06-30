@@ -1,8 +1,17 @@
 use bevy::{
-    DefaultPlugins, app::{App, Startup}, asset::AssetServer, color::Color, light::GlobalAmbientLight, math::Vec3, prelude::{Camera, Camera2d, Camera3d, Commands, Component, ImageNode, Res, Text, Transform}, text::{FontSize, TextFont}, ui::{
+    app::{App, Startup},
+    asset::AssetServer,
+    color::Color,
+    light::GlobalAmbientLight,
+    math::Vec3,
+    prelude::{Camera, Camera2d, Camera3d, Commands, Component, ImageNode, Res, Text, Transform},
+    text::{FontSize, TextFont},
+    ui::{
         AlignItems, BorderColor, BorderRadius, Display, FlexDirection, JustifyContent, Node,
         UiRect, Val,
-    }, world_serialization::WorldAssetRoot,
+    },
+    world_serialization::WorldAssetRoot,
+    DefaultPlugins,
 };
 use bevy_mod_opacity::{Opacity, OpacityPlugin, UiOpacity};
 

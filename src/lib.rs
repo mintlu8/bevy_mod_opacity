@@ -22,6 +22,7 @@ use bevy::{
     transform::systems::{propagate_parent_transforms, sync_simple_transforms},
 };
 use std::marker::PhantomData;
+use std::mem;
 
 #[cfg(feature = "derive")]
 pub use bevy_mod_opacity_derive::Opacity;
@@ -181,15 +182,25 @@ const _: () = {
 /// A map of entity to opacity, if not present, the entity does not have an opacity root node.
 /// This means the entity is out of the scope of this crate and should not be handled.
 #[derive(Debug, Resource, Default)]
-pub struct OpacityMap(EntityHashMap<f32>);
+pub struct OpacityMap(EntityHashMap<OpacityEntry>);
+
+#[derive(Debug, Clone, Copy)]
+pub struct OpacityEntry {
+    pub opacity: f32,
+    pub changed: bool,
+}
 
 /// [`SystemSet`] of opacity,
 /// runs in [`PostUpdate`] between transform propagation and visibility calculation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, SystemSet)]
 pub enum OpacitySet {
+    /// Modify opacity via fading.
     Fading,
+    /// Utilize changed opacity value.
     PostFade,
+    /// Calculate accumulated opacity value.
     Calculate,
+    /// Apply calculated opacity value.
     Apply,
 }
 
@@ -244,7 +255,7 @@ fn calculate_opacity(
     query: Query<(Entity, &Opacity)>,
     children: Query<&Children>,
 ) {
-    map.0.clear();
+    let prev = mem::take(&mut *map);
     let mut stack = Vec::new();
     for (entity, opacity) in &query {
         if map.0.contains_key(&entity) {
@@ -252,7 +263,11 @@ fn calculate_opacity(
         }
         stack.push((entity, opacity.get()));
         while let Some((entity, opacity)) = stack.pop() {
-            map.0.insert(entity, opacity);
+            let changed = match prev.0.get(&entity) {
+                Some(entry) => entry.opacity != opacity,
+                None => true,
+            };
+            map.0.insert(entity, OpacityEntry { opacity, changed });
             if let Ok(children) = children.get(entity) {
                 for entity in children.iter().copied() {
                     let op = query.get(entity).map(|(_, x)| x.get()).unwrap_or(1.);
@@ -284,7 +299,9 @@ fn apply_opacity_query<Q: OpacityQuery>(
     let mut cx = cx.into_inner();
     for (entity, mut component) in &mut query {
         if let Some(opacity) = map.0.get(&entity) {
-            Q::apply_opacity(&mut component, &mut cx, *opacity);
+            if opacity.changed {
+                Q::apply_opacity(&mut component, &mut cx, opacity.opacity);
+            }
         }
     }
 }
