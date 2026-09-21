@@ -37,6 +37,9 @@ Call functions like `Opacity::fade_in` and `Opacity::fade_out` to fade items in 
 | 0.14 | 0.1                |
 | 0.15 | 0.2                |
 | 0.16 | 0.3                |
+| 0.17 | 0.4                |
+| 0.18 | 0.5                |
+| 0.19 | 0.6                |
 
 ## License
 
