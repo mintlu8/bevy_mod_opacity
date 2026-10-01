@@ -4,6 +4,7 @@ pub use bevy::asset::{Assets, Handle};
 use bevy::camera::visibility::VisibilitySystems;
 #[doc(hidden)]
 pub use bevy::color::Alpha;
+use bevy::ecs::entity_disabling::Disabled;
 use bevy::ecs::query::IterQueryData;
 #[doc(hidden)]
 pub use bevy::ecs::query::QueryData;
@@ -42,6 +43,14 @@ pub use pbr::OpacityMaterialExtension;
 pub use ui::UiOpacity;
 
 /// [`Component`] of opacity of this entity and its children.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
+enum WhenTransparent {
+    None,
+    Despawn,
+    Disable,
+}
+
+/// [`Component`] of opacity of this entity and its children.
 #[derive(Debug, Clone, Copy, Component, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "reflect", derive(bevy::prelude::Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Component, Default))]
@@ -49,7 +58,7 @@ pub struct Opacity {
     current: f32,
     target: f32,
     speed: f32,
-    despawns: bool,
+    despawns: WhenTransparent,
 }
 
 impl Opacity {
@@ -64,7 +73,7 @@ impl Opacity {
             current: opacity,
             target: opacity,
             speed: 0.0,
-            despawns: false,
+            despawns: WhenTransparent::None,
         }
     }
 
@@ -100,7 +109,12 @@ impl Opacity {
 
     /// Returns true if is despawning, only when `fade_out` was called but not completed.
     pub const fn is_despawning(&self) -> bool {
-        self.despawns
+        matches!(self.despawns, WhenTransparent::Despawn)
+    }
+
+    /// Returns true if after fading out this entity will be disabled.
+    pub const fn is_disabling(&self) -> bool {
+        matches!(self.despawns, WhenTransparent::Disable)
     }
 
     /// Set opacity to `0.0` and interpolate to `1.0`.
@@ -109,7 +123,7 @@ impl Opacity {
             current: 0.0,
             target: 1.0,
             speed: 1.0 / seconds,
-            despawns: false,
+            despawns: WhenTransparent::None,
         }
     }
 
@@ -117,14 +131,14 @@ impl Opacity {
     pub const fn and_fade_in(mut self, seconds: f32) -> Self {
         self.target = 1.0;
         self.speed = 1.0 / seconds;
-        self.despawns = false;
+        self.despawns = WhenTransparent::None;
         self
     }
 
     /// Interpolate opacity to `1.0`.
     pub fn fade_in(&mut self, seconds: f32) {
         self.target = 1.0;
-        self.despawns = false;
+        self.despawns = WhenTransparent::None;
         self.speed = 1.0 / seconds;
     }
 
@@ -134,21 +148,32 @@ impl Opacity {
     /// If deletion is not desired, call `interpolate_to` with opacity `0.0` instead.
     pub fn fade_out(&mut self, seconds: f32) {
         self.target = 0.0;
-        self.despawns = true;
+        self.despawns = WhenTransparent::Despawn;
+        self.speed = -1.0 / seconds;
+    }
+
+    /// Interpolate opacity to `0.0` and recursively disable the entity and all its descendants when that happens.
+    ///
+    /// Disabling can be stopped by calling `set`, `fade_in` or `interpolate_to` before fade out completed.
+    /// Keep in mind we do not operate on disabled entities, you must recursively remove the [`Disabled`] component to
+    /// utilize transparency again.
+    pub fn fade_out_and_disable(&mut self, seconds: f32) {
+        self.target = 0.0;
+        self.despawns = WhenTransparent::Disable;
         self.speed = -1.0 / seconds;
     }
 
     /// Interpolate opacity to a specific value.
     pub fn interpolate_to(&mut self, opacity: f32, seconds: f32) {
         self.target = opacity;
-        self.despawns = false;
+        self.despawns = WhenTransparent::None;
         self.speed = (opacity - self.current) / seconds;
     }
 
     /// Interpolate opacity to a specific value.
     pub fn interpolate_by_speed(&mut self, opacity: f32, seconds_zero_to_one: f32) {
         self.target = opacity;
-        self.despawns = false;
+        self.despawns = WhenTransparent::None;
         self.speed = (opacity - self.current).signum() / seconds_zero_to_one;
     }
 }
@@ -244,8 +269,18 @@ fn interpolate(
                 }
             }
         }
-        if opacity.despawns && opacity.current <= 0.0 {
-            commands.entity(entity).try_despawn();
+        if opacity.current <= 0.0 {
+            match opacity.despawns {
+                WhenTransparent::None => (),
+                WhenTransparent::Despawn => {
+                    commands.entity(entity).try_despawn();
+                }
+                WhenTransparent::Disable => {
+                    commands
+                        .entity(entity)
+                        .insert_recursive::<Children>(Disabled);
+                }
+            }
         }
     }
 }
